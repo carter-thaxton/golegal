@@ -16,7 +16,7 @@
 
 int main(int argc, char *argv[])
 {
-  int incpus,ncpus,cpuid,modidx,width,y,x,nextx,tsizelen;
+  int ncpus,cpuid,modidx,width,y,x,nextx,tsizelen;
   uint64_t msize,modulus,nin;
   char c,*tsizearg,inbase[64];
   uint64_t skipunder, nnewillcnt, newstates[3]; 
@@ -28,8 +28,8 @@ int main(int argc, char *argv[])
   goout *go;
 
   assert(sizeof(uint64_t)==8);
-  if (argc!=9 && argc!=10) {
-    printf("usage: %s width modulo_index y x incpus ncpus cpuid maxtreesize[kKmMgG] [lastfile]\n",argv[0]);
+  if (argc!=6) {
+    printf("usage: %s width modulo_index y ncpus maxtreesize[kKmMgG]\n",argv[0]);
     exit(1);
   }
   setwidth(width = atoi(argv[1]));
@@ -40,20 +40,13 @@ int main(int argc, char *argv[])
   }
   modulus = -(uint64_t)modulusdeltas[modidx];
   y = atoi(argv[3]);
-  x = atoi(argv[4]);
   nextx = (x+1) % width;
-  incpus = atoi(argv[5]);
-  ncpus = atoi(argv[6]);
+  ncpus = atoi(argv[4]);
   if (ncpus < 1 || ncpus > MAXCPUS) {
     printf ("#cpus %d not in range [0,%d]\n", ncpus, MAXCPUS);
     exit(1);
   }
-  cpuid = atoi(argv[7]);
-  if (cpuid < 0 || cpuid >= ncpus) {
-    printf("cpuid %d not in range [0,%d]\n", ncpus, ncpus-1);
-    exit(1);
-  }
-  tsizelen = strlen(tsizearg = argv[8]);
+  tsizelen = strlen(tsizearg = argv[5]);
   if (!isdigit(c = tsizearg[tsizelen-1]))
     tsizearg[tsizelen-1] = '\0';
    msize = atol(tsizearg);
@@ -67,16 +60,6 @@ int main(int argc, char *argv[])
     printf("memsize %jd too small for comfort.\n", (intmax_t)msize);
     exit(1);
   }
-  if (argc > 9) {
-    assert(sscanf(argv[9],"%d.%lo", &noutfiles, &skipunder) == 2);
-    noutfiles++;
-    printf("skipping %d output files and states up to %jo\n", noutfiles, (uintmax_t)skipunder);
-    skipunder++;
-  } else {
-    noutfiles = 0;
-    skipunder = 0L;
-  }
-
   sprintf(inbase,"%d.%d/yx.%02d.%02d",width,modidx,y,x); 
   gin = openstreams(inbase, incpus, ncpus, cpuid, modulus, skipunder);
   go = goinit(width, modidx, modulus, y+!nextx, nextx, ncpus, cpuid);
